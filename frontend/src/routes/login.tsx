@@ -109,6 +109,11 @@ function Login() {
             가입하기
           </RouterLink>
         </Text>
+        <Text>
+          <RouterLink to="/" className="main-link">
+            홈으로
+          </RouterLink>
+        </Text>
       </Container>
     </>
   )
