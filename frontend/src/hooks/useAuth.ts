@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import Cookies from "js-cookie"
 import { useState } from "react"
 
 import {
@@ -13,7 +14,7 @@ import {
 import { handleError } from "@/utils"
 
 const isLoggedIn = () => {
-  return localStorage.getItem("access_token") !== null
+  return Cookies.get("access_token") !== undefined
 }
 
 const useAuth = () => {
@@ -45,7 +46,7 @@ const useAuth = () => {
     const response = await LoginService.loginAccessToken({
       formData: data,
     })
-    localStorage.setItem("access_token", response.access_token)
+    Cookies.set("access_token", response.access_token)
   }
 
   const loginMutation = useMutation({
@@ -59,7 +60,7 @@ const useAuth = () => {
   })
 
   const logout = () => {
-    localStorage.removeItem("access_token")
+    Cookies.remove("access_token")
     navigate({ to: "/login" })
   }
 
