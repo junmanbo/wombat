@@ -40,7 +40,7 @@ const Sidebar = () => {
             variant="ghost"
             color="inherit"
             display={{ base: "flex", md: "none" }}
-            aria-label="Open Menu"
+            aria-label="메뉴 열기"
             position="absolute"
             zIndex="100"
             m={4}
@@ -63,12 +63,12 @@ const Sidebar = () => {
                   py={2}
                 >
                   <FiLogOut />
-                  <Text>Log Out</Text>
+                  <Text>로그아웃</Text>
                 </Flex>
               </Box>
               {currentUser?.email && (
                 <Text fontSize="sm" p={2}>
-                  Logged in as: {currentUser.email}
+                  로그인 계정: {currentUser.email}
                 </Text>
               )}
             </Flex>

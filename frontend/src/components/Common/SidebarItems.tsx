@@ -7,9 +7,9 @@ import type { IconType } from "react-icons/lib"
 import type { UserPublic } from "@/client"
 
 const items = [
-  { icon: FiHome, title: "Dashboard", path: "/" },
-  { icon: FiBriefcase, title: "Items", path: "/items" },
-  { icon: FiSettings, title: "User Settings", path: "/settings" },
+  { icon: FiHome, title: "대시보드", path: "/" },
+
+  { icon: FiSettings, title: "사용자 설정", path: "/settings" },
 ]
 
 interface SidebarItemsProps {
@@ -27,7 +27,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
 
   const finalItems: Item[] = currentUser?.is_superuser
-    ? [...items, { icon: FiUsers, title: "Admin", path: "/admin" }]
+    ? [...items, { icon: FiUsers, title: "관리자", path: "/admin" }]
     : items
 
   const listItems = finalItems.map(({ icon, title, path }) => (
@@ -51,7 +51,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   return (
     <>
       <Text fontSize="xs" px={4} py={2} fontWeight="bold">
-        Menu
+        메뉴
       </Text>
       <Box>{listItems}</Box>
     </>
