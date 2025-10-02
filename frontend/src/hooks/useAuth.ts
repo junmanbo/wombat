@@ -61,7 +61,8 @@ const useAuth = () => {
 
   const logout = () => {
     Cookies.remove("access_token")
-    navigate({ to: "/login" })
+    queryClient.removeQueries({ queryKey: ["currentUser"] })
+    window.location.reload()
   }
 
   return {
