@@ -54,7 +54,7 @@ function ResetPassword() {
   const mutation = useMutation({
     mutationFn: resetPassword,
     onSuccess: () => {
-      showSuccessToast("Password updated successfully.")
+      showSuccessToast("비밀번호가 성공적으로 업데이트되었습니다.")
       reset()
       navigate({ to: "/login" })
     },
@@ -79,27 +79,27 @@ function ResetPassword() {
       centerContent
     >
       <Heading size="xl" color="ui.main" textAlign="center" mb={2}>
-        Reset Password
+        비밀번호 재설정
       </Heading>
       <Text textAlign="center">
-        Please enter your new password and confirm it to reset your password.
+        새 비밀번호를 입력하고 확인하여 비밀번호를 재설정하십시오.
       </Text>
       <PasswordInput
         startElement={<FiLock />}
         type="new_password"
         errors={errors}
         {...register("new_password", passwordRules())}
-        placeholder="New Password"
+        placeholder="새 비밀번호"
       />
       <PasswordInput
         startElement={<FiLock />}
         type="confirm_password"
         errors={errors}
         {...register("confirm_password", confirmPasswordRules(getValues))}
-        placeholder="Confirm Password"
+        placeholder="비밀번호 확인"
       />
       <Button variant="solid" type="submit">
-        Reset Password
+        비밀번호 재설정
       </Button>
     </Container>
   )

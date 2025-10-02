@@ -68,7 +68,7 @@ function SignUp() {
         >
           <Image
             src={Logo}
-            alt="FastAPI logo"
+            alt="FastAPI 로고"
             height="auto"
             maxW="2xs"
             alignSelf="center"
@@ -83,9 +83,9 @@ function SignUp() {
                 id="full_name"
                 minLength={3}
                 {...register("full_name", {
-                  required: "Full Name is required",
+                  required: "이름은 필수입니다",
                 })}
-                placeholder="Full Name"
+                placeholder="이름"
                 type="text"
               />
             </InputGroup>
@@ -96,10 +96,10 @@ function SignUp() {
               <Input
                 id="email"
                 {...register("email", {
-                  required: "Email is required",
+                  required: "이메일은 필수입니다",
                   pattern: emailPattern,
                 })}
-                placeholder="Email"
+                placeholder="이메일"
                 type="email"
               />
             </InputGroup>
@@ -108,23 +108,23 @@ function SignUp() {
             type="password"
             startElement={<FiLock />}
             {...register("password", passwordRules())}
-            placeholder="Password"
+            placeholder="비밀번호"
             errors={errors}
           />
           <PasswordInput
             type="confirm_password"
             startElement={<FiLock />}
             {...register("confirm_password", confirmPasswordRules(getValues))}
-            placeholder="Confirm Password"
+            placeholder="비밀번호 확인"
             errors={errors}
           />
           <Button variant="solid" type="submit" loading={isSubmitting}>
-            Sign Up
+            가입하기
           </Button>
           <Text>
-            Already have an account?{" "}
+            이미 계정이 있으신가요?{" "}
             <RouterLink to="/login" className="main-link">
-              Log In
+              로그인
             </RouterLink>
           </Text>
         </Container>

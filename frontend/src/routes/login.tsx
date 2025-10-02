@@ -68,7 +68,7 @@ function Login() {
       >
         <Image
           src={Logo}
-          alt="FastAPI logo"
+          alt="FastAPI 로고"
           height="auto"
           maxW="2xs"
           alignSelf="center"
@@ -82,10 +82,10 @@ function Login() {
             <Input
               id="username"
               {...register("username", {
-                required: "Username is required",
+                required: "사용자 이름은 필수입니다",
                 pattern: emailPattern,
               })}
-              placeholder="Email"
+              placeholder="이메일"
               type="email"
             />
           </InputGroup>
@@ -94,19 +94,19 @@ function Login() {
           type="password"
           startElement={<FiLock />}
           {...register("password", passwordRules())}
-          placeholder="Password"
+          placeholder="비밀번호"
           errors={errors}
         />
         <RouterLink to="/recover-password" className="main-link">
-          Forgot Password?
+          비밀번호를 잊으셨나요?
         </RouterLink>
         <Button variant="solid" type="submit" loading={isSubmitting} size="md">
-          Log In
+          로그인
         </Button>
         <Text>
-          Don't have an account?{" "}
+          계정이 없으신가요?{" "}
           <RouterLink to="/signup" className="main-link">
-            Sign Up
+            가입하기
           </RouterLink>
         </Text>
       </Container>

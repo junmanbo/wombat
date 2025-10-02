@@ -8,13 +8,18 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react"
-import { Link as RouterLink } from "@tanstack/react-router"
+import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
+
+import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/")({
   component: Index,
 })
 
 function Index() {
+  const { logout } = useAuth()
+  const loggedIn = isLoggedIn()
+
   return (
     <Container maxW="container.xl" p={0}>
       <Flex as="nav" align="center" justify="space-between" wrap="wrap" p={6}>
@@ -30,27 +35,35 @@ function Index() {
           display={{ base: "none", md: "flex" }}
         >
           <RouterLink to="/">
-            <Text>My Assets</Text>
+            <Text>내 자산</Text>
           </RouterLink>
           <RouterLink to="/">
-            <Text>Trading Strategies</Text>
+            <Text>매매 전략</Text>
           </RouterLink>
           <RouterLink to="/">
-            <Text>Backtesting</Text>
+            <Text>백테스팅</Text>
           </RouterLink>
         </HStack>
 
         <HStack>
-          <RouterLink to="/login">
-            <Button colorScheme="teal" variant="ghost">
-              Login
+          {loggedIn ? (
+            <Button colorScheme="teal" variant="ghost" onClick={logout}>
+              로그아웃
             </Button>
-          </RouterLink>
-          <RouterLink to="/signup">
-            <Button colorScheme="teal" variant="solid">
-              Sign Up
-            </Button>
-          </RouterLink>
+          ) : (
+            <>
+              <RouterLink to="/login">
+                <Button colorScheme="teal" variant="ghost">
+                  로그인
+                </Button>
+              </RouterLink>
+              <RouterLink to="/signup">
+                <Button colorScheme="teal" variant="solid">
+                  가입하기
+                </Button>
+              </RouterLink>
+            </>
+          )}
         </HStack>
       </Flex>
 
@@ -65,17 +78,16 @@ function Index() {
           fontSize={{ base: "2xl", sm: "4xl", md: "6xl" }}
           lineHeight={"110%"}
         >
-          Automate Your Trading,
+          거래를 자동화하고,
           <br />
           <Text as={"span"} color={"teal.400"}>
-            Maximize Your Profits
+            수익을 극대화하세요
           </Text>
         </Heading>
         <Text color={"gray.500"}>
-          Join Wombat Invest and unlock the power of automated stock and crypto
-          trading.
+          Wombat Invest에 가입하여 자동화된 주식 및 암호화폐 거래의 힘을 활용하십시오.
           <br />
-          Create, test, and deploy your trading strategies with ease.
+          거래 전략을 쉽게 생성, 테스트 및 배포하십시오.
         </Text>
         <Stack
           direction={"column"}
@@ -94,7 +106,7 @@ function Index() {
                 bg: "teal.500",
               }}
             >
-              Get Started
+              시작하기
             </Button>
           </RouterLink>
         </Stack>
