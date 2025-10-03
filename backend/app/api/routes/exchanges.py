@@ -42,14 +42,18 @@ def create_exchange(*, session: SessionDep, exchange_in: ExchangeCreate) -> Any:
     """
     Create new exchange.
     """
-    exchange = crud_exchange.get_exchange_by_code(session=session, code=exchange_in.code)
+    exchange = crud_exchange.get_exchange_by_code(
+        session=session, code=exchange_in.code
+    )
     if exchange:
         raise HTTPException(
             status_code=400,
             detail="The exchange with this code already exists in the system.",
         )
 
-    exchange = crud_exchange.create_exchange(session=session, exchange_create=exchange_in)
+    exchange = crud_exchange.create_exchange(
+        session=session, exchange_create=exchange_in
+    )
     return exchange
 
 
@@ -115,9 +119,7 @@ def update_exchange(
     return db_exchange
 
 
-@router.delete(
-    "/{exchange_id}", dependencies=[Depends(get_current_active_superuser)]
-)
+@router.delete("/{exchange_id}", dependencies=[Depends(get_current_active_superuser)])
 def delete_exchange(session: SessionDep, exchange_id: int) -> Message:
     """
     Delete an exchange.
@@ -131,3 +133,4 @@ def delete_exchange(session: SessionDep, exchange_id: int) -> Message:
         raise HTTPException(status_code=500, detail="Failed to delete exchange")
 
     return Message(message="Exchange deleted successfully")
+
