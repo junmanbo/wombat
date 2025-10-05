@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -47,13 +48,13 @@ class SymbolUpdate(SQLModel):
 
 
 class Symbol(SymbolBase, table=True):
+    __table_args__ = (
+        UniqueConstraint("exchange_id", "symbol", name="uq_exchange_symbol"),
+    )
+
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-    class Config:
-        # UNIQUE(exchange_id, symbol) 제약조건은 Alembic migration에서 추가 필요
-        pass
 
 
 class SymbolPublic(SymbolBase):
