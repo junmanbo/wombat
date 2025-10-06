@@ -25,6 +25,7 @@ else:
 
 from app.core.config import settings  # noqa
 from app.models.exchanges import SQLModel  # noqa
+from app.models.symbols import SQLModel  # noqa
 from app.models.users import SQLModel  # noqa
 
 target_metadata = SQLModel.metadata
