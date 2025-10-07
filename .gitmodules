@@ -1,0 +1,3 @@
+[submodule "backend/external/open-trading-api"]
+	path = backend/external/open-trading-api
+	url = https://github.com/koreainvestment/open-trading-api
