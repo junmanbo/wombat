@@ -8,7 +8,7 @@ from sqlmodel import Field, SQLModel
 class SymbolBase(SQLModel):
     exchange_id: int = Field(foreign_key="exchange.id")
     symbol: str = Field(max_length=50)  # 'KRW-BTC', '005930' 등
-    base_asset: str | None = Field(default=None, max_length=20)  # 'BTC', '삼성전자' 등
+    base_asset: str | None = Field(default=None, max_length=100)  # 'BTC', '삼성전자' 등
     quote_asset: str | None = Field(default=None, max_length=20)  # 'KRW', 'USDT' 등
     symbol_type: str = Field(max_length=20)  # 'STOCK', 'CRYPTO'
     market: str | None = Field(
@@ -32,7 +32,7 @@ class SymbolCreate(SymbolBase):
 class SymbolUpdate(SQLModel):
     exchange_id: int | None = None
     symbol: str | None = Field(default=None, max_length=50)
-    base_asset: str | None = Field(default=None, max_length=20)
+    base_asset: str | None = Field(default=None, max_length=100)
     quote_asset: str | None = Field(default=None, max_length=20)
     symbol_type: str | None = Field(default=None, max_length=20)
     market: str | None = Field(default=None, max_length=20)

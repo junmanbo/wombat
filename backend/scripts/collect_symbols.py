@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from sqlmodel import Session
 
 from app.core.db import engine
-from app.engine.collectors import UpbitCollector
+from app.engine.collectors import KISCollector, UpbitCollector
 
 
 async def collect_upbit_symbols():
@@ -33,11 +33,29 @@ async def collect_upbit_symbols():
             raise
 
 
+async def collect_kis_symbols():
+    """Collect symbols from KIS (Korea Investment & Securities)."""
+    print("Starting KIS symbol collection...")
+
+    with Session(engine) as session:
+        collector = KISCollector(session)
+        try:
+            count = await collector.collect_and_save()
+            print(f"Successfully collected {count} symbols from KIS")
+            return count
+        except Exception as e:
+            print(f"Error collecting KIS symbols: {e}")
+            raise
+
+
 async def main():
     """Main entry point for symbol collection."""
     try:
         # Collect from Upbit
         await collect_upbit_symbols()
+
+        # Collect from KIS
+        await collect_kis_symbols()
 
         print("\nSymbol collection completed successfully!")
 
