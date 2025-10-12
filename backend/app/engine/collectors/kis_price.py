@@ -2,22 +2,30 @@
 KIS (Korea Investment & Securities) Price Data Collector
 
 Collects historical OHLCV (Open, High, Low, Close, Volume) price data
-for Korean stocks using KIS API.
+for Korean stocks using KIS API with user-provided API keys.
 """
 
+import os
 import sys
+import tempfile
+import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import yaml
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 # Add external open-trading-api path
-# Navigate from app/engine/collectors -> app -> backend -> external
-external_path = Path(__file__).parent.parent.parent.parent / "external" / "open-trading-api" / "examples_llm"
+external_path = (
+    Path(__file__).parent.parent.parent.parent
+    / "external"
+    / "open-trading-api"
+    / "examples_llm"
+)
 if str(external_path) not in sys.path:
     sys.path.insert(0, str(external_path))
 
@@ -29,6 +37,7 @@ except ImportError as e:
     print("Please ensure KIS API configuration is set up correctly.")
     ka = None
 
+from app.crud import user_api_keys as crud_api_keys
 from app.models.exchanges import Exchange
 from app.models.price_data import PriceData
 from app.models.symbols import Symbol
@@ -37,18 +46,23 @@ from app.models.symbols import Symbol
 class KISPriceCollector:
     """Collector for KIS (Korea Investment & Securities) stock price data."""
 
-    def __init__(self, session: Session, env: str = "vps"):
+    def __init__(
+        self, session: Session, user_id: uuid.UUID | None = None, is_demo: bool = True
+    ):
         """
         Initialize KIS price collector.
 
         Args:
             session: Database session for data persistence
-            env: Environment ('vps' for demo, 'prod' for real trading)
+            user_id: User ID to fetch API keys from user_api_keys table
+            is_demo: Whether to use demo or production environment
         """
         self.session = session
         self.exchange_code = "kis"
         self.exchange_id: int | None = None
-        self.env = env  # 'vps' for demo, 'prod' for production
+        self.user_id = user_id
+        self.is_demo = is_demo
+        self.env = "vps" if is_demo else "prod"
 
         # Initialize KIS authentication
         if ka is None:
@@ -57,17 +71,127 @@ class KISPriceCollector:
                 "Please ensure open-trading-api is properly set up."
             )
 
+        # Authenticate with user's API keys if user_id is provided
+        if user_id:
+            self._authenticate_with_user_keys(user_id, is_demo)
+        else:
+            # Fallback to default configuration (legacy behavior)
+            try:
+                ka.auth(svr=self.env)
+                print(f"KIS API authenticated with default config ({self.env} mode)")
+            except Exception as e:
+                print(f"Warning: KIS API authentication failed: {e}")
+                print("Price data collection may fail. Please check your KIS configuration.")
+
+    def _authenticate_with_user_keys(
+        self, user_id: uuid.UUID, is_demo: bool
+    ) -> None:
+        """
+        Authenticate KIS API using user's stored API keys.
+
+        Args:
+            user_id: User ID
+            is_demo: Whether to use demo credentials
+
+        Raises:
+            ValueError: If no API keys found or authentication fails
+        """
+        print(f"Fetching KIS API keys for user {user_id}...")
+
+        # Get user's KIS API credentials
+        credentials = crud_api_keys.get_decrypted_api_key_by_exchange(
+            session=self.session,
+            user_id=user_id,
+            exchange_type="KIS",
+            is_demo=is_demo,
+        )
+
+        if not credentials:
+            raise ValueError(
+                f"No {'demo' if is_demo else 'production'} KIS API keys found for user {user_id}. "
+                "Please add your KIS API keys first."
+            )
+
+        api_key, api_secret, account_number = credentials
+
+        print(f"✓ Retrieved API keys for account: {account_number or 'N/A'}")
+
+        # Create temporary KIS config file with user's credentials
+        self._create_temp_kis_config(
+            api_key=api_key,
+            api_secret=api_secret,
+            account_number=account_number,
+            is_demo=is_demo,
+        )
+
+        # Authenticate with KIS API
         try:
-            ka.auth(svr=env)
-            print(f"KIS API authenticated ({env} mode)")
+            ka.auth(svr=self.env)
+            print(f"✓ KIS API authenticated successfully ({'demo' if is_demo else 'production'} mode)")
         except Exception as e:
-            print(f"Warning: KIS API authentication failed: {e}")
-            print("Price data collection may fail. Please check your KIS configuration.")
+            raise ValueError(f"KIS API authentication failed: {e}")
+
+    def _create_temp_kis_config(
+        self,
+        api_key: str,
+        api_secret: str,
+        account_number: str | None,
+        is_demo: bool,
+    ) -> None:
+        """
+        Create a temporary KIS configuration file with user's credentials.
+
+        Overwrites the kis_devlp.yaml file temporarily for this session.
+
+        Args:
+            api_key: API key
+            api_secret: API secret
+            account_number: Account number (8 digits)
+            is_demo: Whether this is for demo trading
+        """
+        config_dir = os.path.join(os.path.expanduser("~"), "KIS", "config")
+        os.makedirs(config_dir, exist_ok=True)
+
+        config_path = os.path.join(config_dir, "kis_devlp.yaml")
+
+        # Load existing config template or create new one
+        try:
+            with open(config_path, "r", encoding="UTF-8") as f:
+                config = yaml.load(f, Loader=yaml.FullLoader)
+        except FileNotFoundError:
+            # Create default config structure
+            config = {
+                "my_agent": "wombat-trading",
+                "prod": "https://openapi.koreainvestment.com:9443",
+                "vps": "https://openapivts.koreainvestment.com:29443",
+                "ops": "ws://ops.koreainvestment.com:21000",
+                "vops": "ws://ops.koreainvestment.com:31000",
+                "my_prod": "01",  # 종합계좌
+            }
+
+        # Update config with user's credentials
+        if is_demo:
+            config["paper_app"] = api_key
+            config["paper_sec"] = api_secret
+            config["my_paper_stock"] = account_number or ""
+        else:
+            config["my_app"] = api_key
+            config["my_sec"] = api_secret
+            config["my_acct_stock"] = account_number or ""
+
+        # Set HTS ID if not present (required by KIS API)
+        if "my_htsid" not in config or not config["my_htsid"]:
+            config["my_htsid"] = f"user_{self.user_id}"[:20]  # Max 20 chars
+
+        # Save updated config
+        with open(config_path, "w", encoding="UTF-8") as f:
+            yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
+
+        print(f"✓ KIS config updated at: {config_path}")
 
     def _init_exchange(self) -> None:
         """Get exchange_id from database."""
         if self.exchange_id is None:
-            # Get exchange from database
             statement = select(Exchange).where(Exchange.code == self.exchange_code)
             exchange = self.session.exec(statement).first()
 
@@ -112,7 +236,10 @@ class KISPriceCollector:
         return list(self.session.exec(statement).all())
 
     def fetch_daily_price(
-        self, symbol_code: str, start_date: str | None = None, end_date: str | None = None
+        self,
+        symbol_code: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
     ) -> pd.DataFrame:
         """
         Fetch daily price data from KIS API.
@@ -125,35 +252,25 @@ class KISPriceCollector:
         Returns:
             DataFrame with OHLCV data
         """
-        # 기본 날짜 설정
         if end_date is None:
             end_date = datetime.now().strftime("%Y%m%d")
         if start_date is None:
             start_date = (datetime.now() - timedelta(days=30)).strftime("%Y%m%d")
 
-        # KIS API 파라미터 설정
-        # 주식현재가 일자별 API 사용
         api_url = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
-
-        # TR_ID 설정
-        if self.env == "vps":
-            tr_id = "FHKST01010400"  # 모의투자
-        else:
-            tr_id = "FHKST01010400"  # 실전투자
+        tr_id = "FHKST01010400"
 
         params = {
-            "FID_COND_MRKT_DIV_CODE": "J",  # 시장 분류 코드 (J: 주식)
-            "FID_INPUT_ISCD": symbol_code,  # 종목 코드
-            "FID_PERIOD_DIV_CODE": "D",  # 기간 분류 코드 (D: 일, W: 주, M: 월)
-            "FID_ORG_ADJ_PRC": "0",  # 수정주가 여부 (0: 수정주가 반영, 1: 원주가)
+            "FID_COND_MRKT_DIV_CODE": "J",
+            "FID_INPUT_ISCD": symbol_code,
+            "FID_PERIOD_DIV_CODE": "D",
+            "FID_ORG_ADJ_PRC": "0",
         }
 
         try:
-            # KIS API 호출
             res = ka._url_fetch(api_url, tr_id, "", params)
 
             if res.isOK():
-                # output2에 일자별 데이터가 있음
                 if hasattr(res.getBody(), "output2"):
                     df = pd.DataFrame(res.getBody().output2)
                     return df
@@ -174,15 +291,6 @@ class KISPriceCollector:
         """
         Convert KIS API data to PriceData format.
 
-        KIS API returns columns:
-        - stck_bsop_date: 주식 영업 일자 (YYYYMMDD)
-        - stck_oprc: 시가
-        - stck_hgpr: 고가
-        - stck_lwpr: 저가
-        - stck_clpr: 종가 (현재가)
-        - acml_vol: 누적 거래량
-        - acml_tr_pbmn: 누적 거래 대금
-
         Args:
             symbol_id: Database symbol ID
             df: DataFrame from KIS API
@@ -194,7 +302,6 @@ class KISPriceCollector:
 
         for _, row in df.iterrows():
             try:
-                # 날짜 파싱 (YYYYMMDD -> datetime)
                 date_str = str(row.get("stck_bsop_date", ""))
                 if not date_str or len(date_str) != 8:
                     continue
@@ -203,15 +310,13 @@ class KISPriceCollector:
                     tzinfo=timezone.utc
                 )
 
-                # 가격 데이터 추출 (문자열 -> Decimal)
                 open_price = row.get("stck_oprc", "0")
                 high_price = row.get("stck_hgpr", "0")
                 low_price = row.get("stck_lwpr", "0")
                 close_price = row.get("stck_clpr", "0")
                 volume = row.get("acml_vol", "0")
-                quote_volume = row.get("acml_tr_pbmn", "0")  # 거래대금 (KRW)
+                quote_volume = row.get("acml_tr_pbmn", "0")
 
-                # 빈 값 체크
                 if not all([open_price, high_price, low_price, close_price]):
                     continue
 
@@ -226,7 +331,7 @@ class KISPriceCollector:
                     "quote_volume": (
                         Decimal(str(quote_volume)) if quote_volume else Decimal("0")
                     ),
-                    "timeframe": "1d",  # 일봉 데이터
+                    "timeframe": "1d",
                 }
 
                 price_data_list.append(price_data)
@@ -255,7 +360,6 @@ class KISPriceCollector:
 
         for price_data in price_data_list:
             try:
-                # Check if price data already exists
                 statement = select(PriceData).where(
                     PriceData.symbol_id == price_data["symbol_id"],
                     PriceData.timestamp == price_data["timestamp"],
@@ -267,7 +371,6 @@ class KISPriceCollector:
                     skipped_count += 1
                     continue
 
-                # Create new price data
                 price_data_obj = PriceData(**price_data)
                 self.session.add(price_data_obj)
                 created_count += 1
@@ -278,7 +381,6 @@ class KISPriceCollector:
                 skipped_count += 1
                 continue
 
-        # Commit all at once for better performance
         try:
             self.session.commit()
         except Exception as e:
@@ -289,9 +391,7 @@ class KISPriceCollector:
         return (created_count, skipped_count)
 
     def collect_symbol_price_data(
-        self,
-        symbol: Symbol,
-        days_back: int = 1,
+        self, symbol: Symbol, days_back: int = 1
     ) -> tuple[int, int]:
         """
         Collect price data for a single symbol.
@@ -303,7 +403,6 @@ class KISPriceCollector:
         Returns:
             Tuple of (created_count, skipped_count)
         """
-        # Calculate date range
         end_date = datetime.now().strftime("%Y%m%d")
         start_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y%m%d")
 
@@ -311,7 +410,6 @@ class KISPriceCollector:
             f"Fetching daily data for {symbol.base_asset} ({symbol.symbol}, ID: {symbol.id})..."
         )
 
-        # Fetch price data from KIS API
         df = self.fetch_daily_price(
             symbol_code=symbol.symbol, start_date=start_date, end_date=end_date
         )
@@ -320,7 +418,6 @@ class KISPriceCollector:
             print(f"  No data fetched for {symbol.symbol}")
             return (0, 0)
 
-        # Convert to price data format
         price_data_list = self._convert_kis_data_to_price_data(
             symbol_id=symbol.id, df=df
         )
@@ -329,15 +426,15 @@ class KISPriceCollector:
             print(f"  No valid data for {symbol.symbol}")
             return (0, 0)
 
-        # Save to database
         created, skipped = self.save_price_data(symbol.id, price_data_list)
 
-        print(f"  {symbol.base_asset} ({symbol.symbol}): {created} created, {skipped} skipped")
+        print(
+            f"  {symbol.base_asset} ({symbol.symbol}): {created} created, {skipped} skipped"
+        )
 
-        # Rate limiting: KIS API has rate limits (20 requests per second)
         import time
 
-        time.sleep(0.05)  # 50ms delay between requests
+        time.sleep(0.05)
 
         return (created, skipped)
 
@@ -360,11 +457,12 @@ class KISPriceCollector:
         """
         self._init_exchange()
 
-        # Get stock symbols
         symbols = self._get_stock_symbols(market=market, limit=limit)
 
         market_str = market if market else "ALL"
-        print(f"\nStarting price data collection for {len(symbols)} {market_str} symbols...")
+        print(
+            f"\nStarting price data collection for {len(symbols)} {market_str} symbols..."
+        )
         print(f"Days back: {days_back}\n")
 
         total_created = 0
