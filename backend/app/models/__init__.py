@@ -22,6 +22,14 @@ from .symbols import (
     SymbolsPublic,
     SymbolUpdate,
 )
+from .user_api_keys import (
+    UserApiKey,
+    UserApiKeyBase,
+    UserApiKeyCreate,
+    UserApiKeyPublic,
+    UserApiKeysPublic,
+    UserApiKeyUpdate,
+)
 from .users import (
     Message,
     NewPassword,
@@ -60,6 +68,13 @@ __all__ = [
     "SymbolPublic",
     "SymbolsPublic",
     "SymbolUpdate",
+    # User API Keys
+    "UserApiKey",
+    "UserApiKeyBase",
+    "UserApiKeyCreate",
+    "UserApiKeyPublic",
+    "UserApiKeysPublic",
+    "UserApiKeyUpdate",
     # Users
     "Message",
     "NewPassword",
