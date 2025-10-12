@@ -26,6 +26,17 @@ from .symbols import (
     get_symbols_by_exchange,
     update_symbol,
 )
+from .user_api_keys import (
+    create_user_api_key,
+    deactivate_user_api_key,
+    delete_user_api_key,
+    get_decrypted_api_key,
+    get_decrypted_api_key_by_exchange,
+    get_user_api_key,
+    get_user_api_key_by_exchange,
+    get_user_api_keys,
+    update_user_api_key,
+)
 from .users import (
     authenticate,
     create_user,
@@ -59,6 +70,16 @@ __all__ = [
     "get_symbols",
     "get_symbols_by_exchange",
     "update_symbol",
+    # User API Keys
+    "create_user_api_key",
+    "deactivate_user_api_key",
+    "delete_user_api_key",
+    "get_decrypted_api_key",
+    "get_decrypted_api_key_by_exchange",
+    "get_user_api_key",
+    "get_user_api_key_by_exchange",
+    "get_user_api_keys",
+    "update_user_api_key",
     # Users
     "authenticate",
     "create_user",
