@@ -56,7 +56,8 @@ def collect_kis_prices(
     market: str | None = None,
     days_back: int = 1,
     limit: int | None = None,
-    env: str = "vps",
+    user_id: str | None = None,
+    is_demo: bool = True,
 ):
     """
     Collect price data from KIS (Korea Investment & Securities).
@@ -65,12 +66,26 @@ def collect_kis_prices(
         market: Market filter ('KOSPI', 'KOSDAQ', or None for all)
         days_back: Number of days to go back from today
         limit: Maximum number of symbols to process (None for all)
-        env: Environment ('vps' for demo, 'prod' for real trading)
+        user_id: User UUID to fetch API keys from user_api_keys table
+        is_demo: Whether to use demo or production API keys (default: True)
     """
     print("Starting KIS price data collection...")
 
+    import uuid as uuid_module
+
+    # Convert string user_id to UUID if provided
+    user_uuid = None
+    if user_id:
+        try:
+            user_uuid = uuid_module.UUID(user_id)
+            print(f"Using API keys for user: {user_uuid}")
+        except ValueError:
+            print(f"Error: Invalid user_id format: {user_id}")
+            print("Please provide a valid UUID")
+            raise
+
     with Session(engine) as session:
-        collector = KISPriceCollector(session, env=env)
+        collector = KISPriceCollector(session, user_id=user_uuid, is_demo=is_demo)
         try:
             stats = collector.collect_all_stock_prices(
                 market=market, days_back=days_back, limit=limit
@@ -127,14 +142,29 @@ async def main():
         help="Market filter for KIS (default: None - all markets)",
     )
     parser.add_argument(
-        "--env",
+        "--user-id",
         type=str,
-        default="vps",
-        choices=["vps", "prod"],
-        help="KIS environment: vps for demo, prod for real trading (default: vps)",
+        default=None,
+        help="User UUID for KIS (to fetch API keys from user_api_keys table)",
+    )
+    parser.add_argument(
+        "--is-demo",
+        action="store_true",
+        default=True,
+        help="Use demo/paper trading API keys for KIS (default: True)",
+    )
+    parser.add_argument(
+        "--is-prod",
+        action="store_true",
+        help="Use production API keys for KIS (overrides --is-demo)",
     )
 
     args = parser.parse_args()
+
+    # Handle is_demo flag
+    is_demo = args.is_demo
+    if args.is_prod:
+        is_demo = False
 
     try:
         if args.exchange == "upbit":
@@ -146,7 +176,8 @@ async def main():
                 market=args.market,
                 days_back=args.days_back,
                 limit=args.limit,
-                env=args.env,
+                user_id=args.user_id,
+                is_demo=is_demo,
             )
         else:
             print(f"Exchange '{args.exchange}' not supported yet")
