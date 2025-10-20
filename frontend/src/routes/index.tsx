@@ -8,8 +8,6 @@ import {
 } from "@chakra-ui/react"
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 
-import Navbar from "@/components/Common/Navbar"
-
 export const Route = createFileRoute("/")({
   component: Index,
 })
@@ -17,7 +15,6 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <Container maxW="container.xl" p={0}>
-      <Navbar />
 
       <Stack
         as={Box}

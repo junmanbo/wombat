@@ -1,6 +1,8 @@
+import { Flex } from "@chakra-ui/react"
 import { Outlet, createRootRoute } from "@tanstack/react-router"
 import React, { Suspense } from "react"
 
+import Navbar from "@/components/Common/Navbar"
 import NotFound from "@/components/Common/NotFound"
 
 const loadDevtools = () =>
@@ -23,12 +25,15 @@ const TanStackDevtools =
 
 export const Route = createRootRoute({
   component: () => (
-    <>
-      <Outlet />
+    <Flex direction="column" h="100vh">
+      <Navbar />
+      <Flex flex="1" direction="column" overflowY="auto">
+        <Outlet />
+      </Flex>
       <Suspense>
         <TanStackDevtools />
       </Suspense>
-    </>
+    </Flex>
   ),
   notFoundComponent: () => <NotFound />,
 })
