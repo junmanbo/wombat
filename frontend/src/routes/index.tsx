@@ -2,70 +2,22 @@ import {
   Box,
   Button,
   Container,
-  Flex,
   Heading,
-  HStack,
   Stack,
   Text,
 } from "@chakra-ui/react"
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 
-import useAuth, { isLoggedIn } from "@/hooks/useAuth"
+import Navbar from "@/components/Common/Navbar"
 
 export const Route = createFileRoute("/")({
   component: Index,
 })
 
 function Index() {
-  const { logout } = useAuth()
-  const loggedIn = isLoggedIn()
-
   return (
     <Container maxW="container.xl" p={0}>
-      <Flex as="nav" align="center" justify="space-between" wrap="wrap" p={6}>
-        <Flex align="center" mr={5}>
-          <Heading as="h1" size="lg" letterSpacing={"tighter"}>
-            Wombat Invest
-          </Heading>
-        </Flex>
-
-        <HStack
-          spacing={8}
-          alignItems={"center"}
-          display={{ base: "none", md: "flex" }}
-        >
-          <RouterLink to="/">
-            <Text>내 자산</Text>
-          </RouterLink>
-          <RouterLink to="/">
-            <Text>매매 전략</Text>
-          </RouterLink>
-          <RouterLink to="/">
-            <Text>백테스팅</Text>
-          </RouterLink>
-        </HStack>
-
-        <HStack>
-          {loggedIn ? (
-            <Button colorScheme="teal" variant="ghost" onClick={logout}>
-              로그아웃
-            </Button>
-          ) : (
-            <>
-              <RouterLink to="/login">
-                <Button colorScheme="teal" variant="ghost">
-                  로그인
-                </Button>
-              </RouterLink>
-              <RouterLink to="/signup">
-                <Button colorScheme="teal" variant="solid">
-                  가입하기
-                </Button>
-              </RouterLink>
-            </>
-          )}
-        </HStack>
-      </Flex>
+      <Navbar />
 
       <Stack
         as={Box}

@@ -19,6 +19,7 @@ import { Route as LayoutImport } from './routes/_layout'
 import { Route as IndexImport } from './routes/index'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
+import { Route as LayoutMypageImport } from './routes/_layout/mypage'
 
 // Create/Update Routes
 
@@ -62,6 +63,11 @@ const LayoutSettingsRoute = LayoutSettingsImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutMypageRoute = LayoutMypageImport.update({
+  path: '/mypage',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -90,6 +96,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupImport
       parentRoute: typeof rootRoute
     }
+    '/_layout/mypage': {
+      preLoaderRoute: typeof LayoutMypageImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/settings': {
       preLoaderRoute: typeof LayoutSettingsImport
       parentRoute: typeof LayoutImport
@@ -105,7 +115,11 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren([
   IndexRoute,
-  LayoutRoute.addChildren([LayoutSettingsRoute, LayoutIndexRoute]),
+  LayoutRoute.addChildren([
+    LayoutMypageRoute,
+    LayoutSettingsRoute,
+    LayoutIndexRoute,
+  ]),
   LoginRoute,
   RecoverPasswordRoute,
   ResetPasswordRoute,

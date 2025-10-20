@@ -1,30 +1,83 @@
-import { Flex, Image, useBreakpointValue } from "@chakra-ui/react"
-import { Link } from "@tanstack/react-router"
+import {
+  Button,
+  Flex,
+  Heading,
+  HStack,
+  Text,
+} from "@chakra-ui/react"
+import { Link as RouterLink } from "@tanstack/react-router"
 
-import Logo from "/assets/images/fastapi-logo.svg"
-import UserMenu from "./UserMenu"
+import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
 function Navbar() {
-  const display = useBreakpointValue({ base: "none", md: "flex" })
+  const { logout } = useAuth()
+  const loggedIn = isLoggedIn()
 
   return (
     <Flex
-      display={display}
-      justify="space-between"
-      position="sticky"
-      color="white"
+      as="nav"
       align="center"
-      bg="bg.muted"
-      w="100%"
+      justify="space-between"
+      wrap="wrap"
+      p={6}
+      position="sticky"
       top={0}
-      p={4}
+      bg="bg"
+      zIndex={10}
+      borderBottomWidth="1px"
+      borderColor="border"
     >
-      <Link to="/">
-        <Image src={Logo} alt="Logo" w="180px" maxW="2xs" px={2} />
-      </Link>
-      <Flex gap={2} alignItems="center">
-        <UserMenu />
+      <Flex align="center" mr={5}>
+        <RouterLink to="/">
+          <Heading as="h1" size="lg" letterSpacing={"tighter"}>
+            Wombat Invest
+          </Heading>
+        </RouterLink>
       </Flex>
+
+      <HStack
+        spacing={8}
+        alignItems={"center"}
+        display={{ base: "none", md: "flex" }}
+      >
+        <RouterLink to="/">
+          <Text>내 자산</Text>
+        </RouterLink>
+        <RouterLink to="/">
+          <Text>매매 전략</Text>
+        </RouterLink>
+        <RouterLink to="/">
+          <Text>백테스팅</Text>
+        </RouterLink>
+      </HStack>
+
+      <HStack>
+        {loggedIn ? (
+          <>
+            <RouterLink to="/mypage">
+              <Button colorScheme="teal" variant="ghost">
+                마이페이지
+              </Button>
+            </RouterLink>
+            <Button colorScheme="teal" variant="ghost" onClick={logout}>
+              로그아웃
+            </Button>
+          </>
+        ) : (
+          <>
+            <RouterLink to="/login">
+              <Button colorScheme="teal" variant="ghost">
+                로그인
+              </Button>
+            </RouterLink>
+            <RouterLink to="/signup">
+              <Button colorScheme="teal" variant="solid">
+                가입하기
+              </Button>
+            </RouterLink>
+          </>
+        )}
+      </HStack>
     </Flex>
   )
 }
