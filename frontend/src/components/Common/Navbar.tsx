@@ -7,10 +7,10 @@ import {
 } from "@chakra-ui/react"
 import { Link as RouterLink } from "@tanstack/react-router"
 
-import useAuth, { isLoggedIn } from "@/hooks/useAuth"
+import { isLoggedIn } from "@/hooks/useAuth"
+import UserMenu from "./UserMenu"
 
 function Navbar() {
-  const { logout } = useAuth()
   const loggedIn = isLoggedIn()
 
   return (
@@ -36,7 +36,7 @@ function Navbar() {
       </Flex>
 
       <HStack
-        spacing={8}
+        gap={8}
         alignItems={"center"}
         display={{ base: "none", md: "flex" }}
       >
@@ -53,16 +53,7 @@ function Navbar() {
 
       <HStack>
         {loggedIn ? (
-          <>
-            <RouterLink to="/mypage">
-              <Button colorScheme="teal" variant="ghost">
-                마이페이지
-              </Button>
-            </RouterLink>
-            <Button colorScheme="teal" variant="ghost" onClick={logout}>
-              로그아웃
-            </Button>
-          </>
+          <UserMenu />
         ) : (
           <>
             <RouterLink to="/login">
