@@ -7,11 +7,12 @@ import {
 } from "@chakra-ui/react"
 import { Link as RouterLink } from "@tanstack/react-router"
 
-import { isLoggedIn } from "@/hooks/useAuth"
+import useAuth from "@/hooks/useAuth"
 import UserMenu from "./UserMenu"
 
 function Navbar() {
-  const loggedIn = isLoggedIn()
+  const { user } = useAuth()
+  const loggedIn = !!user
 
   return (
     <Flex

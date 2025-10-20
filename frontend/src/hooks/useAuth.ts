@@ -25,6 +25,7 @@ const useAuth = () => {
     queryKey: ["currentUser"],
     queryFn: UsersService.readUserMe,
     enabled: isLoggedIn(),
+    retry: false,
   })
 
   const signUpMutation = useMutation({
@@ -51,7 +52,14 @@ const useAuth = () => {
 
   const loginMutation = useMutation({
     mutationFn: login,
-    onSuccess: () => {
+    onSuccess: async () => {
+      // 로그인 후 사용자 정보를 즉시 가져오기
+      try {
+        const userData = await UsersService.readUserMe()
+        queryClient.setQueryData(["currentUser"], userData)
+      } catch (error) {
+        console.error("Failed to fetch user data after login:", error)
+      }
       navigate({ to: "/" })
     },
     onError: (err: ApiError) => {

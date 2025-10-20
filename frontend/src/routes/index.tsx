@@ -19,7 +19,7 @@ function Index() {
       <Stack
         as={Box}
         textAlign={"center"}
-        spacing={{ base: 8, md: 14 }}
+        gap={{ base: 8, md: 14 }}
         py={{ base: 20, md: 36 }}
       >
         <Heading
@@ -40,7 +40,7 @@ function Index() {
         </Text>
         <Stack
           direction={"column"}
-          spacing={3}
+          gap={3}
           align={"center"}
           alignSelf={"center"}
           position={"relative"}
