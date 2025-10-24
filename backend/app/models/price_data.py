@@ -25,10 +25,10 @@ class PriceDataBase(SQLModel):
     close_price: Decimal = Field(max_digits=20, decimal_places=8, nullable=False)
 
     # 거래량: 해당 기간의 총 거래량 (주식: 주, 암호화폐: 코인 수량)
-    volume: Decimal = Field(max_digits=20, decimal_places=8, nullable=False)
+    volume: Decimal = Field(max_digits=30, decimal_places=8, nullable=False)
 
     # 거래대금: 해당 기간의 총 거래금액 (quote currency 기준)
-    quote_volume: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
+    quote_volume: Decimal | None = Field(default=None, max_digits=30, decimal_places=8)
 
     # 시간 프레임: 봉의 주기 ('1m', '5m', '15m', '1h', '4h', '1d' 등)
     timeframe: str = Field(max_length=10, nullable=False)
@@ -45,8 +45,8 @@ class PriceDataUpdate(SQLModel):
     high_price: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
     low_price: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
     close_price: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
-    volume: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
-    quote_volume: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
+    volume: Decimal | None = Field(default=None, max_digits=30, decimal_places=8)
+    quote_volume: Decimal | None = Field(default=None, max_digits=30, decimal_places=8)
     timeframe: str | None = Field(default=None, max_length=10)
 
 
