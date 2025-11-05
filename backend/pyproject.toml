@@ -26,6 +26,7 @@ dependencies = [
     "pycryptodome>=3.23.0",
     "cryptography>=45.0.7",
     "pykrx>=1.0.51",
+    "apscheduler>=3.11.1",
 ]
 
 [tool.uv]

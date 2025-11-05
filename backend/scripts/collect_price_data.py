@@ -113,9 +113,9 @@ async def main():
     parser.add_argument(
         "--exchange",
         type=str,
-        default="upbit",
-        choices=["upbit", "kis"],
-        help="Exchange to collect from (default: upbit)",
+        default="all",
+        choices=["upbit", "kis", "all"],
+        help="Exchange to collect from (default: all)",
     )
     parser.add_argument(
         "--market",
@@ -132,6 +132,17 @@ async def main():
                 timeframe=args.timeframe, days_back=args.days_back, limit=args.limit
             )
         elif args.exchange == "kis":
+            collect_kis_prices(
+                market=args.market,
+                days_back=args.days_back,
+                limit=args.limit,
+            )
+        elif args.exchange == "all":
+            print("--- Collecting from all exchanges: Upbit and KIS ---")
+            await collect_upbit_prices(
+                timeframe=args.timeframe, days_back=args.days_back, limit=args.limit
+            )
+            print("\n" + "-" * 20 + "\n")
             collect_kis_prices(
                 market=args.market,
                 days_back=args.days_back,
