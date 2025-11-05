@@ -8,11 +8,16 @@ import {
 } from "@chakra-ui/react"
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 
+import useAuth from "@/hooks/useAuth"
+import MarketOverview from "@/components/Dashboard/MarketOverview"
+
 export const Route = createFileRoute("/")({
   component: Index,
 })
 
 function Index() {
+  const { user } = useAuth()
+
   return (
     <Container maxW="container.xl" p={0}>
 
@@ -60,6 +65,12 @@ function Index() {
           </RouterLink>
         </Stack>
       </Stack>
+
+      {user && (
+        <Box mt={12}>
+          <MarketOverview />
+        </Box>
+      )}
     </Container>
   )
 }
