@@ -16,8 +16,13 @@ sys.path.append(str(Path(__file__).parent.parent))
 from sqlmodel import Session
 
 from app.core.db import engine
+from app.core.logging_config import get_logger
 from app.engine.collectors.kis_price import KISPriceCollector
 from app.engine.collectors.upbit_price import UpbitPriceCollector
+
+# --- Logger Setup ---
+logger = get_logger(__name__)
+# --- End of Logger Setup ---
 
 
 async def collect_upbit_prices(
@@ -31,7 +36,7 @@ async def collect_upbit_prices(
         days_back: Number of days to go back from today
         limit: Maximum number of symbols to process (None for all)
     """
-    print("Starting Upbit price data collection...")
+    logger.info("Starting Upbit price data collection...")
 
     with Session(engine) as session:
         collector = UpbitPriceCollector(session)
@@ -40,15 +45,18 @@ async def collect_upbit_prices(
                 timeframe=timeframe, days_back=days_back, limit=limit
             )
 
-            print("\nUpbit price data collection completed:")
-            print(f"  Symbols processed: {stats['symbols_processed']}")
-            print(f"  Total created: {stats['total_created']}")
-            print(f"  Total skipped: {stats['total_skipped']}")
+            summary_message = (
+                "Upbit price data collection completed: "
+                f"Symbols processed: {stats['symbols_processed']}, "
+                f"Total created: {stats['total_created']}, "
+                f"Total skipped: {stats['total_skipped']}"
+            )
+            logger.info(summary_message)
 
             return stats
 
-        except Exception as e:
-            print(f"Error collecting Upbit price data: {e}")
+        except Exception:
+            logger.error("Error collecting Upbit price data", exc_info=True)
             raise
 
 
@@ -65,7 +73,7 @@ def collect_kis_prices(
         days_back: Number of days to go back from today
         limit: Maximum number of symbols to process (None for all)
     """
-    print("Starting KIS price data collection (using pykrx)...")
+    logger.info("Starting KIS price data collection (using pykrx)...")
 
     with Session(engine) as session:
         collector = KISPriceCollector(session)
@@ -74,16 +82,19 @@ def collect_kis_prices(
                 market=market, days_back=days_back, limit=limit
             )
 
-            print("\nKIS price data collection completed:")
-            print(f"  Symbols processed: {stats['symbols_processed']}")
-            print(f"  Symbols failed: {stats['symbols_failed']}")
-            print(f"  Total created: {stats['total_created']}")
-            print(f"  Total skipped: {stats['total_skipped']}")
+            summary_message = (
+                "KIS price data collection completed: "
+                f"Symbols processed: {stats['symbols_processed']}, "
+                f"Symbols failed: {stats['symbols_failed']}, "
+                f"Total created: {stats['total_created']}, "
+                f"Total skipped: {stats['total_skipped']}"
+            )
+            logger.info(summary_message)
 
             return stats
 
-        except Exception as e:
-            print(f"Error collecting KIS price data: {e}")
+        except Exception:
+            logger.error("Error collecting KIS price data", exc_info=True)
             raise
 
 
@@ -138,27 +149,24 @@ async def main():
                 limit=args.limit,
             )
         elif args.exchange == "all":
-            print("--- Collecting from all exchanges: Upbit and KIS ---")
+            logger.info("--- Collecting from all exchanges: Upbit and KIS ---")
             await collect_upbit_prices(
                 timeframe=args.timeframe, days_back=args.days_back, limit=args.limit
             )
-            print("\n" + "-" * 20 + "\n")
+            logger.info("\n" + "-" * 20 + "\n")
             collect_kis_prices(
                 market=args.market,
                 days_back=args.days_back,
                 limit=args.limit,
             )
         else:
-            print(f"Exchange '{args.exchange}' not supported yet")
+            logger.error(f"Exchange '{args.exchange}' not supported yet")
             sys.exit(1)
 
-        print("\nPrice data collection completed successfully!")
+        logger.info("Price data collection completed successfully!")
 
-    except Exception as e:
-        print(f"\nPrice data collection failed: {e}")
-        import traceback
-
-        traceback.print_exc()
+    except Exception:
+        logger.error("Price data collection failed", exc_info=True)
         sys.exit(1)
 
 

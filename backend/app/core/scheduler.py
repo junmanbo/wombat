@@ -31,5 +31,5 @@ scheduler = AsyncIOScheduler(timezone=str(settings.TZ))
 
 # Add jobs to the scheduler
 # Runs every day at midnight
-scheduler.add_job(run_collect_symbols, "cron", hour=12, minute=24)
-scheduler.add_job(run_collect_price_data, "cron", hour=12, minute=26)
+scheduler.add_job(run_collect_symbols, "cron", hour=0, minute=0)
+scheduler.add_job(run_collect_price_data, "cron", hour=0, minute=2)
