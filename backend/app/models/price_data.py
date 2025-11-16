@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy import DateTime, Index, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -10,7 +10,7 @@ class PriceDataBase(SQLModel):
     symbol_id: int = Field(foreign_key="symbol.id", nullable=False)
 
     # 가격 데이터 타임스탬프 (해당 봉의 시작 시간)
-    timestamp: datetime = Field(nullable=False)
+    timestamp: datetime = Field(nullable=False, sa_type=DateTime(timezone=True))
 
     # 시가: 해당 기간의 첫 거래 가격
     open_price: Decimal = Field(max_digits=20, decimal_places=8, nullable=False)
@@ -25,10 +25,10 @@ class PriceDataBase(SQLModel):
     close_price: Decimal = Field(max_digits=20, decimal_places=8, nullable=False)
 
     # 거래량: 해당 기간의 총 거래량 (주식: 주, 암호화폐: 코인 수량)
-    volume: Decimal = Field(max_digits=20, decimal_places=8, nullable=False)
+    volume: Decimal = Field(max_digits=30, decimal_places=8, nullable=False)
 
     # 거래대금: 해당 기간의 총 거래금액 (quote currency 기준)
-    quote_volume: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
+    quote_volume: Decimal | None = Field(default=None, max_digits=30, decimal_places=8)
 
     # 시간 프레임: 봉의 주기 ('1m', '5m', '15m', '1h', '4h', '1d' 등)
     timeframe: str = Field(max_length=10, nullable=False)
@@ -45,8 +45,8 @@ class PriceDataUpdate(SQLModel):
     high_price: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
     low_price: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
     close_price: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
-    volume: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
-    quote_volume: Decimal | None = Field(default=None, max_digits=20, decimal_places=8)
+    volume: Decimal | None = Field(default=None, max_digits=30, decimal_places=8)
+    quote_volume: Decimal | None = Field(default=None, max_digits=30, decimal_places=8)
     timeframe: str | None = Field(default=None, max_length=10)
 
 
@@ -77,7 +77,10 @@ class PriceData(PriceDataBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
     # 데이터 생성 시각: 레코드가 데이터베이스에 삽입된 시간
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_type=DateTime(timezone=True),
+    )
 
 
 class PriceDataPublic(PriceDataBase):

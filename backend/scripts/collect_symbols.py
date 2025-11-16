@@ -16,35 +16,40 @@ from sqlmodel import Session
 
 from app.core.db import engine
 from app.engine.collectors import KISCollector, UpbitCollector
+from app.core.logging_config import get_logger
+
+# --- Logger Setup ---
+logger = get_logger(__name__)
+# --- End of Logger Setup ---
 
 
 async def collect_upbit_symbols():
     """Collect symbols from Upbit exchange."""
-    print("Starting Upbit symbol collection...")
+    logger.info("Starting Upbit symbol collection...")
 
     with Session(engine) as session:
         collector = UpbitCollector(session)
         try:
             count = await collector.collect_and_save()
-            print(f"Successfully collected {count} symbols from Upbit")
+            logger.info(f"Successfully collected {count} symbols from Upbit")
             return count
-        except Exception as e:
-            print(f"Error collecting Upbit symbols: {e}")
+        except Exception:
+            logger.error("Error collecting Upbit symbols", exc_info=True)
             raise
 
 
 async def collect_kis_symbols():
     """Collect symbols from KIS (Korea Investment & Securities)."""
-    print("Starting KIS symbol collection...")
+    logger.info("Starting KIS symbol collection...")
 
     with Session(engine) as session:
         collector = KISCollector(session)
         try:
             count = await collector.collect_and_save()
-            print(f"Successfully collected {count} symbols from KIS")
+            logger.info(f"Successfully collected {count} symbols from KIS")
             return count
-        except Exception as e:
-            print(f"Error collecting KIS symbols: {e}")
+        except Exception:
+            logger.error("Error collecting KIS symbols", exc_info=True)
             raise
 
 
@@ -57,10 +62,10 @@ async def main():
         # Collect from KIS
         await collect_kis_symbols()
 
-        print("\nSymbol collection completed successfully!")
+        logger.info("\nSymbol collection completed successfully!")
 
-    except Exception as e:
-        print(f"\nSymbol collection failed: {e}")
+    except Exception:
+        logger.error("\nSymbol collection failed", exc_info=True)
         sys.exit(1)
 
 

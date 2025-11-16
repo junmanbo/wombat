@@ -2,42 +2,19 @@
 KIS (Korea Investment & Securities) Price Data Collector
 
 Collects historical OHLCV (Open, High, Low, Close, Volume) price data
-for Korean stocks using KIS API with user-provided API keys.
+for Korean stocks using pykrx (Korea Exchange data crawler).
 """
 
-import os
-import sys
-import tempfile
 import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
-import yaml
+from pykrx import stock
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-# Add external open-trading-api path
-external_path = (
-    Path(__file__).parent.parent.parent.parent
-    / "external"
-    / "open-trading-api"
-    / "examples_llm"
-)
-if str(external_path) not in sys.path:
-    sys.path.insert(0, str(external_path))
-
-try:
-    import kis_auth as ka
-except ImportError as e:
-    print(f"Warning: Could not import kis_auth: {e}")
-    print(f"Attempted import from: {external_path}")
-    print("Please ensure KIS API configuration is set up correctly.")
-    ka = None
-
-from app.crud import user_api_keys as crud_api_keys
 from app.models.exchanges import Exchange
 from app.models.price_data import PriceData
 from app.models.symbols import Symbol
@@ -46,148 +23,17 @@ from app.models.symbols import Symbol
 class KISPriceCollector:
     """Collector for KIS (Korea Investment & Securities) stock price data."""
 
-    def __init__(
-        self, session: Session, user_id: uuid.UUID | None = None, is_demo: bool = True
-    ):
+    def __init__(self, session: Session):
         """
-        Initialize KIS price collector.
+        Initialize KIS price collector using pykrx.
 
         Args:
             session: Database session for data persistence
-            user_id: User ID to fetch API keys from user_api_keys table
-            is_demo: Whether to use demo or production environment
         """
         self.session = session
         self.exchange_code = "kis"
         self.exchange_id: int | None = None
-        self.user_id = user_id
-        self.is_demo = is_demo
-        self.env = "vps" if is_demo else "prod"
-
-        # Initialize KIS authentication
-        if ka is None:
-            raise ImportError(
-                "kis_auth module not available. "
-                "Please ensure open-trading-api is properly set up."
-            )
-
-        # Authenticate with user's API keys if user_id is provided
-        if user_id:
-            self._authenticate_with_user_keys(user_id, is_demo)
-        else:
-            # Fallback to default configuration (legacy behavior)
-            try:
-                ka.auth(svr=self.env)
-                print(f"KIS API authenticated with default config ({self.env} mode)")
-            except Exception as e:
-                print(f"Warning: KIS API authentication failed: {e}")
-                print("Price data collection may fail. Please check your KIS configuration.")
-
-    def _authenticate_with_user_keys(
-        self, user_id: uuid.UUID, is_demo: bool
-    ) -> None:
-        """
-        Authenticate KIS API using user's stored API keys.
-
-        Args:
-            user_id: User ID
-            is_demo: Whether to use demo credentials
-
-        Raises:
-            ValueError: If no API keys found or authentication fails
-        """
-        print(f"Fetching KIS API keys for user {user_id}...")
-
-        # Get user's KIS API credentials
-        credentials = crud_api_keys.get_decrypted_api_key_by_exchange(
-            session=self.session,
-            user_id=user_id,
-            exchange_type="KIS",
-            is_demo=is_demo,
-        )
-
-        if not credentials:
-            raise ValueError(
-                f"No {'demo' if is_demo else 'production'} KIS API keys found for user {user_id}. "
-                "Please add your KIS API keys first."
-            )
-
-        api_key, api_secret, account_number = credentials
-
-        print(f"✓ Retrieved API keys for account: {account_number or 'N/A'}")
-
-        # Create temporary KIS config file with user's credentials
-        self._create_temp_kis_config(
-            api_key=api_key,
-            api_secret=api_secret,
-            account_number=account_number,
-            is_demo=is_demo,
-        )
-
-        # Authenticate with KIS API
-        try:
-            ka.auth(svr=self.env)
-            print(f"✓ KIS API authenticated successfully ({'demo' if is_demo else 'production'} mode)")
-        except Exception as e:
-            raise ValueError(f"KIS API authentication failed: {e}")
-
-    def _create_temp_kis_config(
-        self,
-        api_key: str,
-        api_secret: str,
-        account_number: str | None,
-        is_demo: bool,
-    ) -> None:
-        """
-        Create a temporary KIS configuration file with user's credentials.
-
-        Overwrites the kis_devlp.yaml file temporarily for this session.
-
-        Args:
-            api_key: API key
-            api_secret: API secret
-            account_number: Account number (8 digits)
-            is_demo: Whether this is for demo trading
-        """
-        config_dir = os.path.join(os.path.expanduser("~"), "KIS", "config")
-        os.makedirs(config_dir, exist_ok=True)
-
-        config_path = os.path.join(config_dir, "kis_devlp.yaml")
-
-        # Load existing config template or create new one
-        try:
-            with open(config_path, "r", encoding="UTF-8") as f:
-                config = yaml.load(f, Loader=yaml.FullLoader)
-        except FileNotFoundError:
-            # Create default config structure
-            config = {
-                "my_agent": "wombat-trading",
-                "prod": "https://openapi.koreainvestment.com:9443",
-                "vps": "https://openapivts.koreainvestment.com:29443",
-                "ops": "ws://ops.koreainvestment.com:21000",
-                "vops": "ws://ops.koreainvestment.com:31000",
-                "my_prod": "01",  # 종합계좌
-            }
-
-        # Update config with user's credentials
-        if is_demo:
-            config["paper_app"] = api_key
-            config["paper_sec"] = api_secret
-            config["my_paper_stock"] = account_number or ""
-        else:
-            config["my_app"] = api_key
-            config["my_sec"] = api_secret
-            config["my_acct_stock"] = account_number or ""
-
-        # Set HTS ID if not present (required by KIS API)
-        if "my_htsid" not in config or not config["my_htsid"]:
-            config["my_htsid"] = f"user_{self.user_id}"[:20]  # Max 20 chars
-
-        # Save updated config
-        with open(config_path, "w", encoding="UTF-8") as f:
-            yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
-
-        print(f"✓ KIS config updated at: {config_path}")
+        print("✓ KIS Price Collector initialized (using pykrx - no API authentication required)")
 
     def _init_exchange(self) -> None:
         """Get exchange_id from database."""
@@ -214,7 +60,7 @@ class KISPriceCollector:
             limit: Maximum number of symbols to return (None for all)
 
         Returns:
-            List of stock symbols
+            List of stock symbols (excludes funds and ETFs with non-numeric codes)
         """
         if self.exchange_id is None:
             self._init_exchange()
@@ -222,13 +68,15 @@ class KISPriceCollector:
         statement = select(Symbol).where(
             Symbol.exchange_id == self.exchange_id,
             Symbol.symbol_type == "STOCK",
-            Symbol.is_active == True,
+            Symbol.is_active,
+            # Filter for 6-digit numeric stock codes (excludes funds like F70100009)
+            Symbol.symbol.regexp_match(r"^\d{6}$"),
         )
 
         if market:
             statement = statement.where(Symbol.market == market)
 
-        statement = statement.order_by(Symbol.id)
+        statement = statement.order_by(Symbol.symbol)
 
         if limit:
             statement = statement.limit(limit)
@@ -242,7 +90,7 @@ class KISPriceCollector:
         end_date: str | None = None,
     ) -> pd.DataFrame:
         """
-        Fetch daily price data from KIS API.
+        Fetch daily price data using pykrx.
 
         Args:
             symbol_code: Stock code (e.g., "005930" for Samsung)
@@ -250,50 +98,38 @@ class KISPriceCollector:
             end_date: End date in YYYYMMDD format (default: today)
 
         Returns:
-            DataFrame with OHLCV data
+            DataFrame with OHLCV data (columns: 시가, 고가, 저가, 종가, 거래량)
         """
         if end_date is None:
             end_date = datetime.now().strftime("%Y%m%d")
         if start_date is None:
             start_date = (datetime.now() - timedelta(days=30)).strftime("%Y%m%d")
 
-        api_url = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
-        tr_id = "FHKST01010400"
-
-        params = {
-            "FID_COND_MRKT_DIV_CODE": "J",
-            "FID_INPUT_ISCD": symbol_code,
-            "FID_PERIOD_DIV_CODE": "D",
-            "FID_ORG_ADJ_PRC": "0",
-        }
-
         try:
-            res = ka._url_fetch(api_url, tr_id, "", params)
+            # pykrx의 get_market_ohlcv 사용
+            df = stock.get_market_ohlcv(start_date, end_date, symbol_code)
 
-            if res.isOK():
-                if hasattr(res.getBody(), "output2"):
-                    df = pd.DataFrame(res.getBody().output2)
-                    return df
-                else:
-                    print(f"  No data in response for {symbol_code}")
-                    return pd.DataFrame()
-            else:
-                print(f"  API error for {symbol_code}: {res.getErrorMessage()}")
+            if df.empty:
+                print(f"  No data available for {symbol_code}")
                 return pd.DataFrame()
+
+            # Reset index to get 날짜 as column
+            df = df.reset_index()
+            return df
 
         except Exception as e:
             print(f"  Error fetching data for {symbol_code}: {e}")
             return pd.DataFrame()
 
-    def _convert_kis_data_to_price_data(
+    def _convert_pykrx_data_to_price_data(
         self, symbol_id: int, df: pd.DataFrame
     ) -> list[dict[str, Any]]:
         """
-        Convert KIS API data to PriceData format.
+        Convert pykrx data to PriceData format.
 
         Args:
             symbol_id: Database symbol ID
-            df: DataFrame from KIS API
+            df: DataFrame from pykrx (columns: 날짜, 시가, 고가, 저가, 종가, 거래량)
 
         Returns:
             List of price data dictionaries
@@ -302,35 +138,47 @@ class KISPriceCollector:
 
         for _, row in df.iterrows():
             try:
-                date_str = str(row.get("stck_bsop_date", ""))
-                if not date_str or len(date_str) != 8:
+                # pykrx returns date as '날짜' column after reset_index()
+                if "날짜" not in row.index:
+                    print(f"  Warning: '날짜' column not found. Available columns: {list(row.index)}")
                     continue
 
-                timestamp = datetime.strptime(date_str, "%Y%m%d").replace(
-                    tzinfo=timezone.utc
-                )
+                date_value = row["날짜"]
 
-                open_price = row.get("stck_oprc", "0")
-                high_price = row.get("stck_hgpr", "0")
-                low_price = row.get("stck_lwpr", "0")
-                close_price = row.get("stck_clpr", "0")
-                volume = row.get("acml_vol", "0")
-                quote_volume = row.get("acml_tr_pbmn", "0")
+                # Convert date to timestamp
+                if isinstance(date_value, str):
+                    timestamp = datetime.strptime(date_value, "%Y%m%d").replace(
+                        tzinfo=timezone.utc
+                    )
+                else:
+                    # Already a datetime object (pandas Timestamp)
+                    timestamp = pd.to_datetime(date_value).replace(tzinfo=timezone.utc)
 
-                if not all([open_price, high_price, low_price, close_price]):
+                # pykrx column names: 시가, 고가, 저가, 종가, 거래량
+                open_price = row["시가"]
+                high_price = row["고가"]
+                low_price = row["저가"]
+                close_price = row["종가"]
+                volume = row["거래량"]
+
+                # Validate data
+                if pd.isna(open_price) or pd.isna(high_price) or pd.isna(low_price) or pd.isna(close_price):
+                    print(f"  Skipping row with NaN values: {date_value}")
+                    continue
+
+                if not all([open_price > 0, high_price > 0, low_price > 0, close_price > 0]):
+                    print(f"  Skipping row with zero/negative values: {date_value}")
                     continue
 
                 price_data = {
                     "symbol_id": symbol_id,
                     "timestamp": timestamp,
-                    "open_price": Decimal(str(open_price)),
-                    "high_price": Decimal(str(high_price)),
-                    "low_price": Decimal(str(low_price)),
-                    "close_price": Decimal(str(close_price)),
-                    "volume": Decimal(str(volume)) if volume else Decimal("0"),
-                    "quote_volume": (
-                        Decimal(str(quote_volume)) if quote_volume else Decimal("0")
-                    ),
+                    "open_price": Decimal(str(int(open_price))),
+                    "high_price": Decimal(str(int(high_price))),
+                    "low_price": Decimal(str(int(low_price))),
+                    "close_price": Decimal(str(int(close_price))),
+                    "volume": Decimal(str(int(volume))),
+                    "quote_volume": Decimal("0"),  # pykrx doesn't provide quote_volume
                     "timeframe": "1d",
                 }
 
@@ -338,6 +186,11 @@ class KISPriceCollector:
 
             except (ValueError, KeyError) as e:
                 print(f"  Error converting row: {e}")
+                print(f"  Row data: {row.to_dict()}")
+                continue
+            except Exception as e:
+                print(f"  Unexpected error converting row: {e}")
+                print(f"  Row data: {row.to_dict()}")
                 continue
 
         return price_data_list
@@ -418,7 +271,7 @@ class KISPriceCollector:
             print(f"  No data fetched for {symbol.symbol}")
             return (0, 0)
 
-        price_data_list = self._convert_kis_data_to_price_data(
+        price_data_list = self._convert_pykrx_data_to_price_data(
             symbol_id=symbol.id, df=df
         )
 
@@ -432,9 +285,7 @@ class KISPriceCollector:
             f"  {symbol.base_asset} ({symbol.symbol}): {created} created, {skipped} skipped"
         )
 
-        import time
-
-        time.sleep(0.05)
+        # No need for sleep with pykrx (no API rate limiting)
 
         return (created, skipped)
 
@@ -486,7 +337,7 @@ class KISPriceCollector:
                 continue
 
         print(f"\n{'='*60}")
-        print(f"Collection completed!")
+        print("Collection completed!")
         print(f"Symbols processed: {symbols_processed}/{len(symbols)}")
         print(f"Symbols failed: {symbols_failed}")
         print(f"Total created: {total_created}")

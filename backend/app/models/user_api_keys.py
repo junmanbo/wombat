@@ -7,7 +7,7 @@ Stores encrypted API credentials for external exchanges (KIS, Upbit, etc.)
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import DateTime, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -75,10 +75,16 @@ class UserApiKey(UserApiKeyBase, table=True):
     )
 
     # 생성 일시
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_type=DateTime(timezone=True),
+    )
 
     # 수정 일시
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_type=DateTime(timezone=True),
+    )
 
 
 class UserApiKeyPublic(SQLModel):
