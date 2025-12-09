@@ -26,6 +26,7 @@ else:
 from app.core.config import settings  # noqa
 from app.models.exchanges import SQLModel  # noqa
 from app.models.price_data import SQLModel  # noqa
+from app.models.realtime_price import SQLModel  # noqa
 from app.models.symbols import SQLModel  # noqa
 from app.models.user_api_keys import SQLModel  # noqa
 from app.models.users import SQLModel  # noqa
