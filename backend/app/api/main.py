@@ -5,6 +5,7 @@ from app.api.routes import (
     login,
     price_data,
     private,
+    realtime_price,
     symbols,
     user_api_keys,
     users,
@@ -19,6 +20,7 @@ api_router.include_router(utils.router)
 api_router.include_router(exchanges.router)
 api_router.include_router(symbols.router)
 api_router.include_router(price_data.router)
+api_router.include_router(realtime_price.router)
 api_router.include_router(user_api_keys.router)
 
 
