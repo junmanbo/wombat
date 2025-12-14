@@ -20,7 +20,6 @@ import { Route as IndexImport } from './routes/index'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutMyAssetsImport } from './routes/_layout/my-assets'
-import { Route as LayoutApiKeysImport } from './routes/_layout/api-keys'
 
 // Create/Update Routes
 
@@ -69,11 +68,6 @@ const LayoutMyAssetsRoute = LayoutMyAssetsImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
-const LayoutApiKeysRoute = LayoutApiKeysImport.update({
-  path: '/api-keys',
-  getParentRoute: () => LayoutRoute,
-} as any)
-
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -102,10 +96,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupImport
       parentRoute: typeof rootRoute
     }
-    '/_layout/api-keys': {
-      preLoaderRoute: typeof LayoutApiKeysImport
-      parentRoute: typeof LayoutImport
-    }
     '/_layout/my-assets': {
       preLoaderRoute: typeof LayoutMyAssetsImport
       parentRoute: typeof LayoutImport
@@ -126,7 +116,6 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren([
   IndexRoute,
   LayoutRoute.addChildren([
-    LayoutApiKeysRoute,
     LayoutMyAssetsRoute,
     LayoutSettingsRoute,
     LayoutIndexRoute,

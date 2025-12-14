@@ -2,6 +2,7 @@ import { Container, Heading, Tabs } from "@chakra-ui/react"
 import { createFileRoute } from "@tanstack/react-router"
 
 import Appearance from "@/components/UserSettings/Appearance"
+import ApiKeySettings from "@/components/UserSettings/ApiKeySettings"
 import ChangePassword from "@/components/UserSettings/ChangePassword"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
 import UserInformation from "@/components/UserSettings/UserInformation"
@@ -10,6 +11,7 @@ import useAuth from "@/hooks/useAuth"
 const tabsConfig = [
   { value: "my-profile", title: "내 프로필", component: UserInformation },
   { value: "password", title: "비밀번호", component: ChangePassword },
+  { value: "api-keys", title: "API Key 관리", component: ApiKeySettings },
   { value: "appearance", title: "테마 설정", component: Appearance },
   { value: "danger-zone", title: "계정 삭제", component: DeleteAccount },
 ]
@@ -21,7 +23,7 @@ export const Route = createFileRoute("/_layout/settings")({
 function UserSettings() {
   const { user: currentUser } = useAuth()
   const finalTabs = currentUser?.is_superuser
-    ? tabsConfig.slice(0, 3)
+    ? tabsConfig.slice(0, 4)
     : tabsConfig
 
   if (!currentUser) {
