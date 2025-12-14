@@ -19,6 +19,7 @@ import { Route as LayoutImport } from './routes/_layout'
 import { Route as IndexImport } from './routes/index'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
+import { Route as LayoutMyAssetsImport } from './routes/_layout/my-assets'
 import { Route as LayoutApiKeysImport } from './routes/_layout/api-keys'
 
 // Create/Update Routes
@@ -63,6 +64,11 @@ const LayoutSettingsRoute = LayoutSettingsImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutMyAssetsRoute = LayoutMyAssetsImport.update({
+  path: '/my-assets',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 const LayoutApiKeysRoute = LayoutApiKeysImport.update({
   path: '/api-keys',
   getParentRoute: () => LayoutRoute,
@@ -100,6 +106,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutApiKeysImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/my-assets': {
+      preLoaderRoute: typeof LayoutMyAssetsImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/settings': {
       preLoaderRoute: typeof LayoutSettingsImport
       parentRoute: typeof LayoutImport
@@ -117,6 +127,7 @@ export const routeTree = rootRoute.addChildren([
   IndexRoute,
   LayoutRoute.addChildren([
     LayoutApiKeysRoute,
+    LayoutMyAssetsRoute,
     LayoutSettingsRoute,
     LayoutIndexRoute,
   ]),
