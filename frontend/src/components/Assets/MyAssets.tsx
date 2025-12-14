@@ -112,8 +112,12 @@ export default function MyAssets() {
     return acc
   }, {} as Record<string, Asset[]>)
 
-  const formatCurrency = (value: number): string => {
-    return `${Math.round(value).toLocaleString("ko-KR")} 원`
+  const formatCurrency = (value: number, short: boolean = false): string => {
+    const rounded = Math.round(value)
+    if (short && rounded >= 10000) {
+      return `${(rounded / 10000).toFixed(0)}만원`
+    }
+    return `${rounded.toLocaleString("ko-KR")}원`
   }
 
   const formatNumber = (value: number, decimals: number = 4): string => {
@@ -140,30 +144,30 @@ export default function MyAssets() {
         {/* 총 자산 요약 카드 */}
         <Card.Root>
           <Card.Body>
-            <VStack align="stretch" gap={4}>
-              <Heading size="md">총 자산 현황</Heading>
+            <VStack align="stretch" gap={3}>
+              <Heading size={{ base: "sm", md: "md" }}>총 자산 현황</Heading>
               <HStack justify="space-between" align="baseline">
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
                   총 평가금액
                 </Text>
-                <Text fontSize="2xl" fontWeight="bold">
+                <Text fontSize={{ base: "lg", md: "2xl" }} fontWeight="bold">
                   {formatCurrency(totalAssetValue)}
                 </Text>
               </HStack>
               <HStack justify="space-between" align="baseline">
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
                   총 평가손익
                 </Text>
                 <VStack align="flex-end" gap={0}>
                   <Text
-                    fontSize="xl"
+                    fontSize={{ base: "md", md: "xl" }}
                     fontWeight="semibold"
                     color={getProfitLossColor(totalProfitLoss)}
                   >
                     {formatCurrency(totalProfitLoss)}
                   </Text>
                   <Text
-                    fontSize="md"
+                    fontSize={{ base: "sm", md: "md" }}
                     color={getProfitLossColor(totalProfitLoss)}
                   >
                     {formatPercent(totalProfitLossRate)}
@@ -187,19 +191,25 @@ export default function MyAssets() {
 
           return (
             <Box key={exchange}>
-              <Flex justify="space-between" align="center" mb={4}>
+              <Flex
+                justify="space-between"
+                align="center"
+                mb={4}
+                flexDirection={{ base: "column", md: "row" }}
+                gap={{ base: 2, md: 0 }}
+              >
                 <HStack>
-                  <Heading size="md">{exchange}</Heading>
+                  <Heading size={{ base: "sm", md: "md" }}>{exchange}</Heading>
                   <Badge colorScheme="blue" size="sm">
-                    {exchangeAssets.length}개 자산
+                    {exchangeAssets.length}
                   </Badge>
                 </HStack>
-                <VStack align="flex-end" gap={0}>
-                  <Text fontSize="lg" fontWeight="semibold">
+                <VStack align={{ base: "center", md: "flex-end" }} gap={0}>
+                  <Text fontSize={{ base: "md", md: "lg" }} fontWeight="semibold">
                     {formatCurrency(exchangeTotal)}
                   </Text>
                   <Text
-                    fontSize="sm"
+                    fontSize={{ base: "xs", md: "sm" }}
                     color={getProfitLossColor(exchangeProfitLoss)}
                   >
                     {formatCurrency(exchangeProfitLoss)}
@@ -207,79 +217,150 @@ export default function MyAssets() {
                 </VStack>
               </Flex>
 
-              <Card.Root>
-                <Card.Body p={0}>
-                  <Box overflowX="auto">
-                    <Table.Root size="sm" variant="line">
-                      <Table.Header>
-                        <Table.Row>
-                          <Table.ColumnHeader textAlign="left">
-                            종목
-                          </Table.ColumnHeader>
-                          <Table.ColumnHeader textAlign="right">
-                            보유수량
-                          </Table.ColumnHeader>
-                          <Table.ColumnHeader textAlign="right">
-                            평균매수가
-                          </Table.ColumnHeader>
-                          <Table.ColumnHeader textAlign="right">
-                            현재가
-                          </Table.ColumnHeader>
-                          <Table.ColumnHeader textAlign="right">
-                            평가금액
-                          </Table.ColumnHeader>
-                          <Table.ColumnHeader textAlign="right">
-                            평가손익
-                          </Table.ColumnHeader>
-                          <Table.ColumnHeader textAlign="right">
-                            수익률
-                          </Table.ColumnHeader>
-                        </Table.Row>
-                      </Table.Header>
-                      <Table.Body>
-                        {exchangeAssets.map((asset) => (
-                          <Table.Row key={asset.id}>
-                            <Table.Cell>
-                              <VStack align="flex-start" gap={0}>
-                                <Text fontWeight="semibold">{asset.name}</Text>
-                                <Text fontSize="xs" color="gray.500">
-                                  {asset.symbol}
-                                </Text>
-                              </VStack>
-                            </Table.Cell>
-                            <Table.Cell textAlign="right">
-                              {formatNumber(asset.quantity)}
-                            </Table.Cell>
-                            <Table.Cell textAlign="right">
-                              {formatCurrency(asset.avgPrice)}
-                            </Table.Cell>
-                            <Table.Cell textAlign="right">
-                              {formatCurrency(asset.currentPrice)}
-                            </Table.Cell>
-                            <Table.Cell textAlign="right" fontWeight="semibold">
+              {/* 데스크탑 테이블 뷰 */}
+              <Box display={{ base: "none", md: "block" }}>
+                <Card.Root>
+                  <Card.Body p={0}>
+                    <Box overflowX="auto">
+                      <Table.Root size="sm" variant="line">
+                        <Table.Header>
+                          <Table.Row>
+                            <Table.ColumnHeader textAlign="left">
+                              종목
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader textAlign="right">
+                              보유수량
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader textAlign="right">
+                              평균매수가
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader textAlign="right">
+                              현재가
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader textAlign="right">
+                              평가금액
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader textAlign="right">
+                              평가손익
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader textAlign="right">
+                              수익률
+                            </Table.ColumnHeader>
+                          </Table.Row>
+                        </Table.Header>
+                        <Table.Body>
+                          {exchangeAssets.map((asset) => (
+                            <Table.Row key={asset.id}>
+                              <Table.Cell>
+                                <VStack align="flex-start" gap={0}>
+                                  <Text fontWeight="semibold">{asset.name}</Text>
+                                  <Text fontSize="xs" color="gray.500">
+                                    {asset.symbol}
+                                  </Text>
+                                </VStack>
+                              </Table.Cell>
+                              <Table.Cell textAlign="right">
+                                {formatNumber(asset.quantity)}
+                              </Table.Cell>
+                              <Table.Cell textAlign="right">
+                                {formatCurrency(asset.avgPrice)}
+                              </Table.Cell>
+                              <Table.Cell textAlign="right">
+                                {formatCurrency(asset.currentPrice)}
+                              </Table.Cell>
+                              <Table.Cell textAlign="right" fontWeight="semibold">
+                                {formatCurrency(asset.totalValue)}
+                              </Table.Cell>
+                              <Table.Cell
+                                textAlign="right"
+                                color={getProfitLossColor(asset.profitLoss)}
+                                fontWeight="semibold"
+                              >
+                                {formatCurrency(asset.profitLoss)}
+                              </Table.Cell>
+                              <Table.Cell
+                                textAlign="right"
+                                color={getProfitLossColor(asset.profitLoss)}
+                                fontWeight="semibold"
+                              >
+                                {formatPercent(asset.profitLossRate)}
+                              </Table.Cell>
+                            </Table.Row>
+                          ))}
+                        </Table.Body>
+                      </Table.Root>
+                    </Box>
+                  </Card.Body>
+                </Card.Root>
+              </Box>
+
+              {/* 모바일 카드 뷰 */}
+              <VStack align="stretch" gap={3} display={{ base: "flex", md: "none" }}>
+                {exchangeAssets.map((asset) => (
+                  <Card.Root key={asset.id} size="sm">
+                    <Card.Body>
+                      <VStack align="stretch" gap={2}>
+                        {/* 종목명과 심볼 */}
+                        <Flex justify="space-between" align="center">
+                          <VStack align="flex-start" gap={0}>
+                            <Text fontWeight="bold" fontSize="md">
+                              {asset.name}
+                            </Text>
+                            <Text fontSize="xs" color="gray.500">
+                              {asset.symbol}
+                            </Text>
+                          </VStack>
+                          <Badge
+                            colorScheme={asset.profitLoss >= 0 ? "green" : "red"}
+                          >
+                            {formatPercent(asset.profitLossRate)}
+                          </Badge>
+                        </Flex>
+
+                        {/* 평가금액과 평가손익 */}
+                        <HStack justify="space-between" pt={2} borderTopWidth="1px">
+                          <VStack align="flex-start" gap={0}>
+                            <Text fontSize="xs" color="gray.600">
+                              평가금액
+                            </Text>
+                            <Text fontWeight="semibold" fontSize="lg">
                               {formatCurrency(asset.totalValue)}
-                            </Table.Cell>
-                            <Table.Cell
-                              textAlign="right"
-                              color={getProfitLossColor(asset.profitLoss)}
+                            </Text>
+                          </VStack>
+                          <VStack align="flex-end" gap={0}>
+                            <Text fontSize="xs" color="gray.600">
+                              평가손익
+                            </Text>
+                            <Text
                               fontWeight="semibold"
+                              fontSize="lg"
+                              color={getProfitLossColor(asset.profitLoss)}
                             >
                               {formatCurrency(asset.profitLoss)}
-                            </Table.Cell>
-                            <Table.Cell
-                              textAlign="right"
-                              color={getProfitLossColor(asset.profitLoss)}
-                              fontWeight="semibold"
-                            >
-                              {formatPercent(asset.profitLossRate)}
-                            </Table.Cell>
-                          </Table.Row>
-                        ))}
-                      </Table.Body>
-                    </Table.Root>
-                  </Box>
-                </Card.Body>
-              </Card.Root>
+                            </Text>
+                          </VStack>
+                        </HStack>
+
+                        {/* 상세 정보 */}
+                        <VStack align="stretch" gap={1} pt={1}>
+                          <HStack justify="space-between" fontSize="xs">
+                            <Text color="gray.600">보유수량</Text>
+                            <Text>{formatNumber(asset.quantity)}</Text>
+                          </HStack>
+                          <HStack justify="space-between" fontSize="xs">
+                            <Text color="gray.600">평균매수가</Text>
+                            <Text>{formatCurrency(asset.avgPrice, true)}</Text>
+                          </HStack>
+                          <HStack justify="space-between" fontSize="xs">
+                            <Text color="gray.600">현재가</Text>
+                            <Text>{formatCurrency(asset.currentPrice, true)}</Text>
+                          </HStack>
+                        </VStack>
+                      </VStack>
+                    </Card.Body>
+                  </Card.Root>
+                ))}
+              </VStack>
             </Box>
           )
         })}
