@@ -62,7 +62,7 @@ function Navbar() {
               내 자산
             </Text>
           </RouterLink>
-          <RouterLink to="/">
+          <RouterLink to="/trading-strategies">
             <Text
               _hover={{ color: "teal.500" }}
               transition="color 0.2s"
@@ -133,7 +133,7 @@ function Navbar() {
                 내 자산
               </Text>
             </RouterLink>
-            <RouterLink to="/" onClick={toggleMobileMenu}>
+            <RouterLink to="/trading-strategies" onClick={toggleMobileMenu}>
               <Text
                 py={2}
                 px={3}

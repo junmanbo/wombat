@@ -18,8 +18,10 @@ import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as IndexImport } from './routes/index'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
+import { Route as LayoutTradingStrategiesImport } from './routes/_layout/trading-strategies'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutMyAssetsImport } from './routes/_layout/my-assets'
+import { Route as LayoutApiKeysImport } from './routes/_layout/api-keys'
 
 // Create/Update Routes
 
@@ -58,6 +60,11 @@ const LayoutIndexRoute = LayoutIndexImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutTradingStrategiesRoute = LayoutTradingStrategiesImport.update({
+  path: '/trading-strategies',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 const LayoutSettingsRoute = LayoutSettingsImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
@@ -65,6 +72,11 @@ const LayoutSettingsRoute = LayoutSettingsImport.update({
 
 const LayoutMyAssetsRoute = LayoutMyAssetsImport.update({
   path: '/my-assets',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutApiKeysRoute = LayoutApiKeysImport.update({
+  path: '/api-keys',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -96,12 +108,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupImport
       parentRoute: typeof rootRoute
     }
+    '/_layout/api-keys': {
+      preLoaderRoute: typeof LayoutApiKeysImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/my-assets': {
       preLoaderRoute: typeof LayoutMyAssetsImport
       parentRoute: typeof LayoutImport
     }
     '/_layout/settings': {
       preLoaderRoute: typeof LayoutSettingsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/trading-strategies': {
+      preLoaderRoute: typeof LayoutTradingStrategiesImport
       parentRoute: typeof LayoutImport
     }
     '/_layout/': {
@@ -116,8 +136,10 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren([
   IndexRoute,
   LayoutRoute.addChildren([
+    LayoutApiKeysRoute,
     LayoutMyAssetsRoute,
     LayoutSettingsRoute,
+    LayoutTradingStrategiesRoute,
     LayoutIndexRoute,
   ]),
   LoginRoute,

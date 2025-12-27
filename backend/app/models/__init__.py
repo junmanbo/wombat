@@ -30,6 +30,20 @@ from .symbols import (
     SymbolsPublic,
     SymbolUpdate,
 )
+from .trading_strategies import (
+    StrategySymbol,
+    StrategySymbolBase,
+    StrategySymbolCreate,
+    StrategySymbolPublic,
+    StrategySymbolsPublic,
+    StrategySymbolUpdate,
+    TradingStrategy,
+    TradingStrategyBase,
+    TradingStrategyCreate,
+    TradingStrategyPublic,
+    TradingStrategiesPublic,
+    TradingStrategyUpdate,
+)
 from .user_api_keys import (
     UserApiKey,
     UserApiKeyBase,
@@ -83,6 +97,19 @@ __all__ = [
     "SymbolPublic",
     "SymbolsPublic",
     "SymbolUpdate",
+    # Trading Strategies
+    "StrategySymbol",
+    "StrategySymbolBase",
+    "StrategySymbolCreate",
+    "StrategySymbolPublic",
+    "StrategySymbolsPublic",
+    "StrategySymbolUpdate",
+    "TradingStrategy",
+    "TradingStrategyBase",
+    "TradingStrategyCreate",
+    "TradingStrategyPublic",
+    "TradingStrategiesPublic",
+    "TradingStrategyUpdate",
     # User API Keys
     "UserApiKey",
     "UserApiKeyBase",

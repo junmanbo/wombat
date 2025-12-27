@@ -7,6 +7,7 @@ from app.api.routes import (
     private,
     realtime_price,
     symbols,
+    trading_strategies,
     user_api_keys,
     users,
     utils,
@@ -22,6 +23,7 @@ api_router.include_router(symbols.router)
 api_router.include_router(price_data.router)
 api_router.include_router(realtime_price.router)
 api_router.include_router(user_api_keys.router)
+api_router.include_router(trading_strategies.router)
 
 
 if settings.ENVIRONMENT == "local":
